@@ -1,0 +1,117 @@
+\documentclass[a4paper,9pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{blindtext}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\usepackage{listings}
+
+\newcommand{\fig}[4][ht!]{
+  \begin{figure}[#1]
+    {\centering{\includegraphics[#4]{#2}}\par}
+    \caption{#3}
+    \label{fig:#2}
+  \end{figure}
+}
+
+% Title
+\title{Relatório: Projeto, Implementação e Caracterização de um Instrumento Medidor de Velocidade Angular}
+\author{Lucas Pires Camargo}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este relatório apresenta um instrumento medidor de velocidade angular construído para avaliação na disciplina de Instrumentação. 
+São apresentados aspectos gerais da construção do instrumento e depois é apresentao o processo de caracterização, as 
+características obtidas do instrumento, e uma discussão dos resultados obtidos. O instrumento operou corretamente e
+foi apontado como melhorar sua precisão.
+\end{abstract}
+
+%\section{Conceitos Básicos}
+%\blindtext
+
+\section{O Instrumento de Medição}
+
+O instrumento foi construído em três partes: o módulo transdutor, uma placa de aquisição de dados, 
+e um programa de computador para análise da captura e exibição. A Figura~\ref{fig:impl} mostra uma visão geral do sistema.
+
+\fig{impl}{Visão geral do instrumento.}{width=\columnwidth}
+
+O módulo transdutor é um \emph{encoder} de quadratura simples com 30 pulsos (15 ciclos) por rotação. Este é proveniente de um kit hobbysta e não dispõe 
+de datasheet. Um \emph{encoder} de quadratura é composto por dois contatos que deslizam sobre a região dentada de uma engrenagem, com um deslocamento entre si. A rotação da engrenagem sob os contatos gera duas ondas quadradas com uma defasagem. A Figura~\ref{fig:quadrature} mostra os dois sinas gerados pelos contatos. Quando o sentido de rotação se inverte, a defasagem também é invertida. É possível determinar um deslocamento angular do eixo do \emph{encoder} contando os pulsos dos sinais de entrada. Questões importantes que surgem da utilização de \emph{encoders} de quadratura: a natureza mecânica dos contatos cria a necessidade do condicionamento dos sinais por uma técnica conhecida como \emph{debouncing}, que busca eliminar o efeito de múltiplos acionamentos causado pelo ressalto dos contatos.
+
+
+\fig{quadrature}{Sinais de saída de um \emph{encoder} de quadratura.}{width=\columnwidth}
+
+A placa de captura foi criada com a plataforma de desenvolvimento Tiva-C Series TMC123G, fabricada pela Texas Instruments.
+O programa lê continuamente os sinais provenientes do \textit{encoder} e determina a direção de deslocamento do eixo quando ocorre um pulso. O debouncing é feito de duas maneiras. A primeira é evitando-se que o sinal de entrada do algoritmo possa mudar muito rapidamente, o que elimina pulsos extremamente curtos de serem avaliados. A segunda maneira trata da validação das mudanças de estado dos sinais de entrada. Comparando-se o estado atual com o anterior, pode ser determinada a direção da rotação e se a mesma deve ser entendida como um movimento de avanço ou ignorado. 
+
+Quando um pulso é reconhecido, ele é enviado ao computador na forma de um único caractere na porta serial. A velocidade do módulo serial é de 115200~baud, 
+na configuração 8~bits de dados, nenhum bit de paridade, e 1~bit de parada. A velocidade resultante é de 11520~kBps, ou pulsos por segundo. Com o \textit{encoder} sendo utilizado com o instrumento fornecendo 30 pulsos por ciclo, isso se traduz em uma velocidade máxima teórica de 384 rotações por segundo, ou seja, 23040~rpm.
+
+Por fim foi feito o programa de computador que faz a contagem dos pulsos e exibe a velocidade de rotação estimada. O núcleo do programa foi escrito em na liguagem de programação C++ e a interface com o usuário na linguagem declarativa QML. O programa possui duas configurações: a quantidade de pulsos emitidos pelo \textit{encoder} por rotação, e a duração do intervalo de contagem de pulsos. O programa possibilita a vizualização dos pulsos em tempo real, através de um mostrador circular simples. Também avisa se houverem pulsos em direções discordantes em um mesmo intervalo de medição, o que indica problemas de aquisição para uma carga que gira consistentemente em uma direção. A Figura~\ref{fig:app1} mostra a aplicação executando no desktop. 
+
+\fig{app1}{Aplicação medidora de velocidade angular.}{width=0.8\columnwidth}
+
+
+\section{Caracterização}
+Para avaliação do instrumento, foi necessário acoplar o \textit{encoder} a uma carga e verificar seu correto funcionamento. Um antigo servomotor escovado de íma permanente E760 da Reliance Electric foi utilizado para essa finalidade. Para realizar o acoplamento, foi necessário criar um suporte para o \textit{encoder} no motor e um acoplador fêmea-fêmea em um torno. O projeto dos mesmos foi realizado com o auxílio do software Solidworks. A Figura~\ref{fig:solidworks} mostra o projeto do acoplamento em vista explodida. Este foi usinado e montado no Laboratório de Fabricação da UFSC Joinville. A Figura~\ref{fig:setup} mostra o instrumento acoplado ao motor.
+
+\fig{solidworks}{Projeto do acoplamento no Solidworks.}{width=\columnwidth}
+
+\fig{setup}{Instrumento acoplado ao motor.}{width=\columnwidth}
+
+Na configuração padrão, o instrumento conta pulsos em intervalos de 400~ms. Dados $N$= número de pulsos contabilizados, $E$= número de pulsos por revolução do \textit{encoder}, e $T$ = tamanho do intervalo de medição em segundos,  a medição em rotações por minuto é dada por $\omega_{rpm} = (60 * N)/(E * T)$. Como a medição de saída é inversamente proporcional à contagem de pulsos do \textit{encoder}, a suscetibikidade do instrumento au jittering não é constante. Quanto maior a velocidade de rotação (quantidade de pulsos por revolução do \textit{encoder}) ou janela de amostragem, melhor é a medição da velocidade, em proporção à sua magnitude.
+
+A utilização de CPU média na execução dos testes foi cerca de 5\%. Para obtenção de um valor de referência para a caracterização do instrumento, um sensor indutivo contador de pulsos foi instalado em proximidade do eixo do \textit{encoder} e a frequência de rotação do motor foi contabilizada por um osciloscópio KEYSIGHT InfiniVision DSO-X-3014A. Os testes foram executados no sistema operacional Linux 4.2.0-18 em um computador de mesa pessoal convencional. 
+
+Foram feitas várias medições de teste, apresentadas na Tabela 1. De maneira geral, a resposta do instrumento foi muito próxima à saída esperada, fornecendo uma curva de calibração fortemente linear. Pôde ser observado que a amostra de maior magnitude apresentou maior erro, o que pode indicar o início de perdas da contagem de pulsos. Uma maior velocidade não pôde ser amostrada devido a limitações do motor sendo utilizado.
+Das medições realizadas foi derivada a curva de calibração apresentada na Figura~\ref{fig:data2}. As linhas do gráfico se sobrepõem, portanto apenas uma linha é visível com clareza. No gráfico, "medidor rpm" denota a medição do instrumento apra um dado valor de entrada, e "função calibração inv" denota a curva de calibração obtida por uma regressão linear.
+
+\fig{data2}{Dados e curva de calibração.}{width=\columnwidth}
+
+O medidor pôde ser analisado estaticamente. Não foram feitas análises dinâmicas. Também não foi observada nenhuma histerese. Pode se atribuir essas características desejáveis ao fato de o programa medidor processar seções discretas do sinal de maneira independente umas das outras.
+
+Uma possível aplicação do instrumento é o controle de velocidade para aplicações de servomotores em laboratório e a prototipagem de novos equipamentos. O instrumento foi implementado em uma plataforma que dispõe de poder computacional disponível e periféricos adequados (geradores de ondas PWM) para a implementação de controle de velocidade de maneira independente, sem auxílio de um computador. 
+
+\section{Discussão}
+
+Durante o processo de amostragem, a medição oscilava em torno de um valor médio. Pôde ser verificado que os intervalos de medição fixos e leituras da porta serial causavam \textit{jittering}, que foi o principal limitante da performance do instrumento. A resolução pode ser melhorada diminuindo-se a taxa de atualização, sacrificando responsividade, ou acrescentando timestamps às amostras do programa, o que deve reduzir o jittering consideravelmente.
+
+O instrumento poderia ser melhorado tornando a taxa de atualização configurável, e explicitando-se qual a resolução da medição atual. Um \textit{encoder} menos ruidoso poderia diminuir a chance de ocorrerem perdas na contagem de pulsos.
+
+
+\section{Conclusão}
+
+Este relatório apresentou a implementação de um instrumento medidor de frequência e a análise de suas características. Verificou-se que o
+instrumento fncionou como o proposto. Foi feita uma análise de suas características principais e foram feitas sugestões para sua melhoria
+e desenvolvimentos futuros.
+
+
+\begin{table}
+\begin{center}
+ 
+
+  \begin{tabular}{lrr}
+    Entrada & Saída & Erro \\ \hline
+    63  &  65  &  2 \\
+    111,3  &  111  &  -0,3 \\
+    283,8 & 285  &  1,2 \\
+    477 & 475 &  -2 \\
+    837,6 & 837 &  -0,6 \\
+    1080 & 1082 &  2 \\
+    1380 & 1380 & 0     \\
+1609,8	& 1610	& 0,2     \\
+1931,4	& 1928	& -3,4     
+  \end{tabular}
+  \caption{Resultados das medidas de teste}
+  \label{tab:ch}
+
+  \end{center}
+\end{table}
+
+
+
+
+\end{document}          

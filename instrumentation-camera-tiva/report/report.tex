@@ -1,0 +1,85 @@
+\documentclass[hidelinks, a4paper, 9pt, twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{blindtext}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\newcommand{\fig}[4][ht!]{
+  \begin{figure}[#1]
+    {\centering{\includegraphics[#4]{#2}}\par}
+    \caption{#3}
+    \label{fig:#2}
+  \end{figure}
+}
+
+% Title
+\title{Relatório: Acessando a câmera OV7673 no microcontrolador Tiva TM4C123GHPM}
+\author{Lucas Pires Camargo}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este relatório apresenta um estudo do interfaceamento entre a câmera OV7673 fabricada pela \textit{OmniVision}\cite{ov7673}, e o microcontrolador Tiva TM4C123GHPM da \textit{Texas Instruments}\cite{tiva}. 
+São apresentados aspectos gerais da construção do instrumento, o processo de implementação e uma discussão dos resultados obtidos. O instrumento operou corretamente dentro das limitações dos dispositivos e
+foi apontado como melhorar a qualidade da implementação.
+\end{abstract}
+
+%\section{Conceitos Básicos}
+%\blindtext
+
+\section{Materiais e Métodos}
+
+O Microcontrolador Tiva TM4C123GHPM é uma solução integrada da \textit{Texas Instruments} para o desenvolvimento de aplicações industriais incluindo monitoramento remoto, máquinas eletrônicas de ponto-de-venda, teste e medição, dispositivos de rede e switches, automação de fábrica, aquecimento, ventilação e ar-condicionado (\textit{HVAC}), entre outros. Possui um núcleo de processador ARM® Cortex™-M4 de 32 bits operando em 80-MHz, 32KB de memória SRAM, e periféricos diversos como controladores CAN e USB, módulos de comunicação serial UART, SSI e I\textsuperscript{2}C. Ele foi escolhido pela facilidade de desenvolvimento e por ser a plataforma padrão da disciplina de instrumentação. A Figura~\ref{fig:tiva} apresenta uma visão geral do dispositivo.
+
+
+\fig{tiva}{Visão geral do microcontrolador.}{width=\columnwidth}
+
+A câmera OV7673, obtida em forma de módulo completo com lentes e suporte de montagem, é destinada a aplicações de baixo custo e sistemas embarcados. Suporta resolução VGA (640x480) e espaçoes de cor YCbCr, RGB565 e RGB888. O processador de sinais embutido suporta escalonamento simples da imagem de saída. A câmera é capaz de operar em uma taxa de atualização de 30 quadros por segundo. A Figura~\ref{fig:ov7673} apresenta uma visão geral do dispositivo. 
+
+A configuração da câmera é feita por um barramento especial SCCB (\textit{Serial Camera Control Bus}), como mostra a figura. Esse barramento é compatível com o padrão I2C com algumas incompatibilidades. Porém, foi possível utilizar o periférico de comunicação I2C do Tiva para fazer a comunicação com alguns ajustes de modo de operação e rotinas de leitura e escrita de registradores.
+
+\fig{ov7673}{Visão geral da câmera.}{width=\columnwidth}
+
+UA saída dos sinas da câmera é feito através de um barramento paralelo com três sinais de sincronização: um sinal de sincronização de quadro (\textit{FSYNC}), un sinal de sincronização de linha (\textit{HREF}), e o relógio de pixels (\textit{PCLK}). Um pixel de uma linha deve ser lido a cada borda de descida do pixel de clock, e as linhas são separadas pelas bordas de subida do sinal de sincronização de linha. A velocidade de atualização da câmera depende exclusivamente da frequência do relógio de entrada externo da câmera (\textit{XCLK}). O Tiva não possui saída de relógio, e por isso foi necessário gerar um sinal de relógio a partir do módulo PWM, operando próximo aos limites de operação e gerando uma onda quadrada em uma frequeência de 10MHz. 
+
+O programa criado para o Tiva lê um quadro da câmera em um buffer na memória RAM e o transmite a um computador pela interface serial. Como a memória e velocidade do dispositivo são limitados, foi necessário fazer vários compromissos com a qualidade de imagem. Com apenas, 32KB de memória disponíveis no Tiva para todo o programa, o único tamanho de framebuffer que se pôde obter foi uma configuração QQVGA 160x120 pixels de resolução a 8 bits por pixel (monocromático), o que ocupa 19,2~KB de memória. 
+
+Por fim foi feito o programa de computador que faz a exibição da imagem da câmera. O núcleo do programa foi escrito em na liguagem de programação C++ e a interface com o usuário foi criata utilizando-se a biblioteca Qt versão 5.5. Os testes foram executados no sistema operacional Linux 4.2.0-18. O programa possibilita a vizualização das imagens em tempo real, e também apresenta um botão para gravar em um arquivo o último quadro recebido. 
+
+\section{Resultados e Discussão}
+
+
+A Figura~\ref{fig:app1} mostra a aplicação executando no desktop. Verificou-se que, na configuração de hardware atual, os resultados obtidos estão muito aquém das capacidades de operação da câmera. A taxa de quadros atingida é cerca de 1.4 quadros por segundo, e em uma resolução QQVGA em modo escala de cinza. Devido a um defeito em uma das portas da placa disponível, não foi possível utilizar uma porta inteira com 8 bits, então na captura dois bits menos significativos estão sendo descartados.
+
+\fig{app1}{Aplicação da câmera executando no computador.}{width=0.8\columnwidth}
+
+Para melhorar a performance da aplicação, as seguintes mudanças são propostas, que podem ser feitas isoladamente ou em conjuto:
+\begin{itemize}
+\item Abandonar o uso do barramento serial e utilizar o módulo USB para comunicação com o computador para maior velocidade;
+\item Estudar a utilização do módulo DMA para fazer transferências dos registradores da GPIO para o barramento de saída sem interferência direta do processador;
+\item Adicionar uma FIFO ao barramento da câmera para possibilitar o tratamento assíncrono dos quadros da câmera.
+\end{itemize}
+
+\section{Conclusão}
+
+Este relatório apresentou o interfaceamento da uma câmera OV7673 com um microcontrolador Tiva TM4C123G. Verificou-se que o
+instrumento fncionou como o proposto. Foi feita uma análise de suas características principais e foram feitas sugestões para sua melhoria
+e desenvolvimentos futuros.
+
+
+\begin{thebibliography}{9}
+
+\bibitem{tiva} Texas Instruments, \textbf{TM4C123GH6PM: high performance 32-bit ARM Cortex-M4F based MCU.} Acessado em 4 de Dezembro de 2015. Disponível em \url{http://www.ti.com/product/tm4c123gh6pm}. 
+
+\bibitem{ov7673} OmniVision, \textbf{OV7675:
+CMOS VGA Image Sensor with OmniPixel3-HS Technology.} Acessado em 4 de Dezembro de 2015. Disponível em \url{http://www.ovt.com/products/sensor.php?id=75}. 
+
+\bibitem{qt} Digia, \textbf{Qt- Home.} Acessado em 4 de Dezembro de 2015. Disponível em \url{http://www.qt.io/}. 
+
+\end{thebibliography}
+
+\end{document}          

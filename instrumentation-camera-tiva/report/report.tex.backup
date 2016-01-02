@@ -1,0 +1,154 @@
+\documentclass[a4paper,9pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{blindtext}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfigure}
+\usepackage{listings}
+
+\newcommand{\fig}[4][ht!]{
+  \begin{figure}[#1]
+    {\centering{\includegraphics[#4]{#2}}\par}
+    \caption{#3}
+    \label{fig:#2}
+  \end{figure}
+}
+
+% Title
+\title{Relatório: Projeto, Implementação e Caracterização de um Instrumento Medidor de Velocidade Angular}
+\author{Lucas Pires Camargo}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este relatório apresenta um instrumento medidor de velocidade angular construído para avaliação na disciplina de Instrumentação. 
+São apresentados aspectos gerais da construção do instrumento e depois é apresentao o processo de caracterização, as 
+características obtidas do instrumento, e uma discussão dos resultados obtidos. O instrumento operou corretamente e
+foi apontado como melhorar sua precisão.
+\end{abstract}
+
+%\section{Conceitos Básicos}
+%\blindtext
+
+\section{O Instrumento de Medição}
+
+O instrumento foi construído em três partes: o módulo transdutor, uma placa de aquisição de dados, 
+e um programa de computador para análise da captura e exibição. A figura~\ref{fig:impl} mostra uma visão geral do sistema.
+
+\fig{impl}{Visão geral do instrumento.}{width=\columnwidth}
+
+O módulo transdutor é um encoder de quadratura simples com 30 pulsos (15 ciclos) por rotação. Este é proveniente de um kit hobbysta e não dispõe 
+de datasheet. Ela apresenta apenas uma única saída digital, proveniente de um comparador analógico LM393 e que não é adequada 
+para a aplicação desejada. Portanto, ela foi modificada para obtenção do sinal analógico puro. 
+Um pino de saída analógica extra foi adicionado soldando-se um conector na saída do estágio de amplificação do microfone. 
+
+A placa de captura foi criada com a plataforma de desenvolvimanto Tiva-C Series TMC123G, fabricada pela Texas Instruments.
+O programa é simples: faz a leitura do módulo conversor A/D em uma frequência específica e envia os dados ao computador através da porta serial.
+Os requisitos de tempo são atendidos utilizando-se de interrupções para o disparo do timer. Há a garantia de que o tempo de conversão máximo do módulo A/D
+é sempre uma ordem de grandeza menor do que o inverso da frequência de captura (máximo $1\mu{}s$). A velocidade do módulo serial é de 460800~baud, 
+na configuração 8~bits de dados, nenhum bit de paridade, e 1~bit de parada. A velocidade resultante é de 46080~kBps, adequada para a transmissão 
+de amostras de 8~bits a 22050KHz.
+
+Por fim foi feito o programa de computador que faz a análise espectral do sinal e exibe a componente de frequência principal. 
+O núcleo do programa foi escrito em na liguagem de programação C++ e a interface com o usuário na linguagem declarativa QML.
+Foi utilizada a biblioteca \texttt{fftw} para executar a transformada de fourier dos buffers de amostras. A entrada é analisada
+à taxa de 8 buffers pro segundo. O programa possibilita a normalização da onda sonora para exibição, e a aplicação do Filtro Janela 
+Hann no sinal de entrada, ativado pro padrão. A Figura~\ref{fig:app1} mostra a aplicação executando no desktop. A Figura~\ref{fig:setup} 
+mostra a configuração de testes completa.
+
+\fig{app1}{Aplicação medidora de frequência.}{width=0.8\columnwidth}
+
+\fig{setup}{Configuração de teste.}{width=\columnwidth}
+
+\section{Caracterização}
+Pode-se avaliar a faixa de valores de entrada e saida teóricos através do teorema da amostragem de Nyquist–Shannon. Frequências superiores à 
+metade da frequência de amostragem causam o fenômeno de \emph{aliasing}. Portanto a máxima frequência que pode ser verificada é 22050~kHz/2 = 11025~kHz.
+
+O instrumento analisa a cada 0,125~s um \emph{buffer} de $N=2756$~amostras. A transformada de fourier discreta utilizada na análise apresenta na 
+$N_f = N/2 = 1378$ níveis de frequência. Esse níveis devem ser escalonados linermente para a faixa $[0, f/2]~Hz$ de valores de saída do instrumento, onde f é a frequência de amostragem
+do sinal de entrada. Portanto, a resolução do instrumento é dada por $f_2/N_f = 8$~Hz. 
+
+Foram feitas várias medições de teste, apresentadas na Tabela 1. Estabeleceu-se que o instrumento apresenta zonas mortas nas 
+faixas $[0, 100[~Hz$ e $]10000, 11000]~Hz$. Essas zonas mortas podem ser atribuídas à baixa resposta do sensor nessas faixas de frequência.
+Das medições realizadas foi derivada a curva de calibração apresentada na Figura~\ref{fig:data}. 
+
+\fig{data}{Curva de calibração do sensor.}{width=\columnwidth}
+
+O medidor pôde ser analisado estaticamente. Não foram feitas análises dinâmicas. Também não foi observada nenhuma histerese. Pode se 
+atribuir essas características desejáveis ao fato de o programa medidor processar seções discretas do sinal de maneira independente umas das outras.
+
+Uma possível aplicação do instrumento seria na análise de ruído 
+
+\section{Discussão}
+
+Foi observado que, à exceção das zonas mortas, o erro das medições não ultrapassou o limite de resolução do instrumento. Portanto, o 
+principal limitante da performance do instrumento são os erros de quantização. Pode ser demonstrado que na implementação atual a resolução em $Hz$ sempre
+será igual à taxa de atualização do instrumento. Portanto a resolução pode ser melhorada diminuindo-se a taxa de atualização, 
+sacrificando responsividade.
+
+O instrumento poderia ser melhorado tornando a taxa de atualização configurável, e explicitando-se qual a resolução da medição atual. Um microfone 
+com uma resposta de frequência mais uniforme poderia diminuir as zonas mortas do instrumento.
+
+
+\section{Conclusão}
+
+Este relatório apresentou a implementação de um instrumento medidor de frequência e a análise de suas características. Verificou-se que o
+instrumento fncionou como o proposto. Foi feita uma análise de suas características principais e foram feitas sugestões para sua melhoria
+e desenvolvimentos futuros.
+
+
+\begin{table*}
+\begin{center}
+ 
+
+  \begin{tabular}{lrr}
+    Entrada & Saída & Erro \\ \hline
+    50  &  0  &  50 \\
+    75  &  0  &  75 \\
+    100 & 96  &  4 \\
+    150 & 152 &  2 \\
+    200 & 200 &  0 \\
+    300 & 296 &  4 \\
+    400	& 400	& 0     \\
+500	& 504	& 4     \\
+600	& 600	& 0     \\
+700	& 704	& 4     \\
+800	& 800	& 0     \\
+900	& 904	& 4     \\
+1000	& 1000	& 0     \\
+1200	& 1200	& 0     \\
+1400	& 1400	& 0     \\
+1600	& 1600	& 0     \\
+1800	& 1800	& 0     \\
+2000	& 2000	& 0     \\
+2500	& 2504	& 4     \\
+3000	& 3000	& 0     \\
+3500	& 3504	& 4     \\
+4000	& 4000	& 0     \\
+4500	& 4504	& 4     \\
+5000	& 5000	& 0     \\
+5500	& 5504	& 4     \\
+6000	& 6000	& 0     \\
+6500	& 6504	& 4     \\
+7000	& 7000	& 0     \\
+7500	& 7504	& 4     \\
+8000	& 8000	& 0     \\
+8500	& 8504	& 4     \\
+9000	& 9000	& 0     \\
+9500	& 9504	& 4     \\
+10000	& 10000	& 0     \\
+10500	& 0	& 10500 \\
+11000	& 0	& 11000 \\
+
+  \end{tabular}
+  \caption{Resultados das medidas de teste}
+  \label{tab:ch}
+
+  \end{center}
+\end{table*}
+
+
+
+
+\end{document}          

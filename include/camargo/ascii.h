@@ -1,0 +1,35 @@
+#pragma once
+
+#define ASCII_CTRL_NUL    0X0
+#define ASCII_CTRL_SOH    0X1
+#define ASCII_CTRL_STX    0X2
+#define ASCII_CTRL_ETX    0X3
+#define ASCII_CTRL_EOT    0X4
+#define ASCII_CTRL_ENQ    0X5
+#define ASCII_CTRL_ACK    0X6
+#define ASCII_CTRL_BEL    0X7
+#define ASCII_CTRL_BS     0X8
+#define ASCII_CTRL_HT     0X9
+#define ASCII_CTRL_LF     0XA
+#define ASCII_CTRL_VT     0XB
+#define ASCII_CTRL_FF     0XC
+#define ASCII_CTRL_CR     0XD
+#define ASCII_CTRL_SO     0XE
+#define ASCII_CTRL_SI     0XF
+#define ASCII_CTRL_DLE    0X10
+#define ASCII_CTRL_DC1    0X11
+#define ASCII_CTRL_DC2    0X12
+#define ASCII_CTRL_DC3    0X13
+#define ASCII_CTRL_DC4    0X14
+#define ASCII_CTRL_NAK    0X15
+#define ASCII_CTRL_SYN    0X16
+#define ASCII_CTRL_ETB    0X17
+#define ASCII_CTRL_CAN    0X18
+#define ASCII_CTRL_EM     0X19
+#define ASCII_CTRL_SUB    0X1A
+#define ASCII_CTRL_ESC    0X1B
+#define ASCII_CTRL_FS     0X1C
+#define ASCII_CTRL_GS     0X1D
+#define ASCII_CTRL_RS     0X1E
+#define ASCII_CTRL_US     0X1F
+#define ASCII_CTRL_DEL    0X7F
